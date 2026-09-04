@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
-
+from pydantic import BaseModel
 
 class CourseBase(BaseModel):
     name: str = Field(min_length=2, max_length=150)
@@ -33,3 +33,10 @@ class CourseResponse(CourseBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class CourseListResponse(BaseModel):
+    items: list[CourseResponse]
+    page: int
+    limit: int
+    total: int
+    pages: int

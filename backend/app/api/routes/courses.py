@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from math import ceil
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.models.course import Course
-from app.schemas.course import CourseCreate, CourseResponse, CourseUpdate
+from app.schemas.course import CourseCreate, CourseListResponse, CourseResponse, CourseUpdate
 
 
 router = APIRouter(
@@ -41,17 +42,56 @@ def create_course(
 
 @router.get(
     "",
-    response_model=list[CourseResponse],
+    response_model=CourseListResponse,
 )
 def get_courses(
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+    search: str | None = Query(default=None, min_length=1),
+    level: str | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
+    query = select(Course)
+
+    if search:
+        search_term = f"%{search.strip()}%"
+
+        query = query.where(
+            Course.name.ilike(search_term)
+            | Course.description.ilike(search_term)
+        )
+
+    if level:
+        query = query.where(Course.level == level)
+
+    if is_active is not None:
+        query = query.where(Course.is_active == is_active)
+
+    count_query = select(func.count()).select_from(
+        query.subquery()
+    )
+
+    total = db.scalar(count_query) or 0
+
+    offset = (page - 1) * limit
+
     courses = db.scalars(
-        select(Course)
+        query
         .order_by(Course.created_at.desc())
+        .offset(offset)
+        .limit(limit)
     ).all()
 
-    return courses
+    pages = ceil(total / limit) if total else 0
+
+    return CourseListResponse(
+        items=courses,
+        total=total,
+        page=page,
+        limit=limit,
+        pages=pages,
+    )
 
 @router.get(
     "/{course_id}",
