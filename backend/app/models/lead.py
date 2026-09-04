@@ -1,9 +1,12 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+if TYPE_CHECKING:
+    from app.models.conversation import Conversation
 
 
 class Lead(Base):
@@ -53,4 +56,8 @@ class Lead(Base):
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
         nullable=False,
+    )
+    conversations: Mapped[list["Conversation"]] = relationship(
+    back_populates="lead",
+    cascade="all, delete-orphan",
     )

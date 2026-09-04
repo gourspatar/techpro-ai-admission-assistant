@@ -1,10 +1,11 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
-
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
-
+if TYPE_CHECKING:
+    from app.models.conversation import Conversation
 
 class Message(Base):
     __tablename__ = "messages"
@@ -30,4 +31,9 @@ class Message(Base):
         DateTime,
         default=datetime.utcnow,
         nullable=False,
+    )
+
+    conversation: Mapped["Conversation"] = relationship(
+    "Conversation",
+    back_populates="messages"
     )
