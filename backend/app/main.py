@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.database import engine, get_db
 from app.api.routes.courses import router as courses_router
+from app.api.routes.lead import router as leads_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -12,6 +13,7 @@ app = FastAPI(
 )
 
 app.include_router(courses_router)
+app.include_router(leads_router)
 
 @app.get("/health")
 def health_check():
