@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
-from pydantic import BaseModel
 
 class CourseBase(BaseModel):
     name: str = Field(min_length=2, max_length=150)

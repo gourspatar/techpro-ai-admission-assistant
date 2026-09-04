@@ -50,6 +50,7 @@ def get_courses(
     search: str | None = Query(default=None, min_length=1),
     level: str | None = Query(default=None),
     is_active: bool | None = Query(default=None),
+    sort: str = Query(default="-created_at"),
     db: Session = Depends(get_db),
 ):
     query = select(Course)
@@ -76,9 +77,30 @@ def get_courses(
 
     offset = (page - 1) * limit
 
+    allowed_sort_fields = {
+    "name": Course.name,
+    "fee": Course.fee,
+    "created_at": Course.created_at,
+}
+
+    sort_field = sort.lstrip("-")
+
+    if sort_field not in allowed_sort_fields:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid sort field. Allowed values: name, fee, created_at",
+        )
+
+    sort_column = allowed_sort_fields[sort_field]
+
+    if sort.startswith("-"):
+        sort_column = sort_column.desc()
+    else:
+        sort_column = sort_column.asc()
+
     courses = db.scalars(
         query
-        .order_by(Course.created_at.desc())
+        .order_by(sort_column)
         .offset(offset)
         .limit(limit)
     ).all()
